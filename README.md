@@ -42,7 +42,7 @@ on failure:
 }
 ```
 
-- PUT /tasks/{id}/complete
+- POST /tasks/{id}/toggle
 on success:
 ```
 {

@@ -12,4 +12,7 @@
 
   (db/add-todo db {:name "go to the store"})
 
-  (db/list-todos db))
+  (db/list-todos db)
+
+  (db/toggle-todo db 1)
+  (db/remove-todo db 1))
