@@ -17,4 +17,5 @@
   (db/toggle-todo db 1)
   (db/remove-todo db 1)
 
-  (db/get-burndown db))
+  (db/get-burndown db)
+  (db/get-progress db))

@@ -38,6 +38,18 @@
   (let [{:keys [conn]} todo-db]
     (jdbc/execute! conn ["delete from todo_item where id = ?" task-id])))
 
+(defn get-progress
+  [todo-db]
+  (let [{:keys [conn]} todo-db]
+    (->> (jdbc/execute! conn [(lines
+                               "select (case when completed is null then \"incomplete\" else \"complete\" end) as status,"
+                               "  count() as count"
+                               "from todo_item"
+                               "group by (completed is null)")])
+         (reduce (fn [result row]
+                   (assoc result (keyword (:status row)) (:count row)))
+                 {}))))
+
 (defn get-burndown
   [todo-db]
   (let [{:keys [conn]} todo-db]
