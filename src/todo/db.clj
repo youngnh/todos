@@ -1,5 +1,10 @@
 (ns todo.db
-  (:require [next.jdbc :as jdbc]))
+  (:require [clojure.string :as string]
+            [next.jdbc :as jdbc]))
+
+(defn- lines
+  [& strs]
+  (string/join \newline strs))
 
 (def default-spec {:dbtype "sqlite", :dbname "todo.db"})
 
@@ -18,9 +23,13 @@
 (defn toggle-todo
   [todo-db task-id]
   (let [{:keys [conn]} todo-db]
-    (jdbc/execute! conn [(str
+    (jdbc/execute! conn [(lines
                           "update todo_item "
-                          "  set completed=(case when completed then null else strftime('%s', 'now') end)"
+                          "  set completed=("
+                          "    case when completed"
+                          "      then null"
+                          "      else strftime('%s', 'now') end"
+                          "  )"
                           "  where id = ?")
                          task-id])))
 
@@ -29,10 +38,23 @@
   (let [{:keys [conn]} todo-db]
     (jdbc/execute! conn ["delete from todo_item where id = ?" task-id])))
 
+(defn get-burndown
+  [todo-db]
+  (let [{:keys [conn]} todo-db]
+    {:created (jdbc/execute! conn [(lines
+                                    "select distinct created, count() over created_win as count"
+                                    "  from todo_item"
+                                    "  window created_win as (order by created)")])
+     :completed (jdbc/execute! conn [(lines
+                                      "select distinct completed, count() over completed_win as count"
+                                      "  from todo_item"
+                                      "  where completed is not null"
+                                      "  window completed_win as (order by completed)")])}))
+
 (defn create-schema!
   [todo-db]
   (let [{:keys [conn]} todo-db]
-    (jdbc/execute! conn [(str
+    (jdbc/execute! conn [(lines
                           "create table todo_item ("
                           "  id integer primary key autoincrement,"
                           "  name text,"
