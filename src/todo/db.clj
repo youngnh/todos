@@ -8,6 +8,20 @@
 
 (def default-spec {:dbtype "sqlite", :dbname "todo.db"})
 
+(defn generate-or-refresh-token
+  [todo-db user]
+  (let [{:keys [conn]} todo-db
+        token (random-uuid)]
+    (jdbc/execute! conn [(lines
+                          "insert into auth_token(user, token, expires)"
+                          "values (?, ?, strftime('%s', 'now') + 3600)"
+                          "on conflict (user)"
+                          "do update set token = ?, expires = strftime('%s', 'now') + 3600")
+                         user
+                         token
+                         token])
+    token))
+
 (defn list-todos
   [todo-db]
   (let [{:keys [conn]} todo-db]
@@ -75,17 +89,24 @@
   [todo-db]
   (let [{:keys [conn]} todo-db]
     (jdbc/execute! conn [(lines
-                          "create table todo_item ("
+                          "create table if not exists todo_item ("
                           "  id integer primary key autoincrement,"
                           "  name text,"
                           "  created integer,"
                           "  completed integer"
+                          ");")])
+    (jdbc/execute! conn [(lines
+                          "create table if not exists auth_token ("
+                          "  user text primary key,"
+                          "  token text not null,"
+                          "  expires integer not null"
                           ");")])))
 
 (defn teardown-schema!
   [todo-db]
   (let [{:keys [conn]} todo-db]
-    (jdbc/execute! conn ["drop table todo_item"])))
+    (jdbc/execute! conn ["drop table if exists todo_item"])
+    (jdbc/execute! conn ["drop table if exists auth_token"])))
 
 (defrecord TodoDB [conn])
 

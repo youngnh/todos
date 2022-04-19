@@ -21,6 +21,21 @@
     (let [{:keys [db]} ctx]
       (db/todo-exists? db task-id))))
 
+(defresource login
+  :allowed-methods [:post]
+  :available-media-types ["application/json"]
+  :malformed? (fn [ctx]
+                (let [{:keys [user]} (get-in ctx [:request :json-params])]
+                  [(nil? user) {:user user}]))
+  :post! (fn [ctx]
+           (let [{:keys [db user]} ctx]
+             {:token (db/generate-or-refresh-token db user)}))
+  :respond-with-entity? true
+  :handle-ok (fn [ctx]
+               (let [{:keys [token]} ctx]
+                 {:status "ok"
+                  :token token})))
+
 (defresource tasks [user]
   :service-available? {:db (db/create)}
   :allowed-methods [:get :post]
@@ -92,6 +107,7 @@
                  (db/get-burndown db))))
 
 (defroutes app
+  (ANY "/login" login)
   (ANY "/:user/tasks" [user] (tasks user))
   (ANY "/:user/task/:task-id" [user task-id] (task user task-id))
   (ANY "/:user/tasks/:task-id/toggle" [user task-id] (task-toggle user task-id))
