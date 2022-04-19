@@ -8,6 +8,22 @@ To start a standalone todo api server:
 
 # API
 
+- POST /login
+params:
+```
+{ "user": "alice@example.com" }
+```
+
+returns:
+```
+201 Created
+{
+  "status": "ok",
+  "token": "<auth token>"
+}
+```
+when interacting with the api, all requests should have an `Authorization` header with the value `Bearer <auth token>` obtained from this api endpoint
+
 - GET /{user}/tasks
 View list of existing todo tasks
 
@@ -15,10 +31,10 @@ returns:
 ```
 200 OK
 {
-  id: "taskid"
-  name: "Name of task"
-  created: 1650384918
-  completed: 1650385453
+  "id": "taskid"
+  "name": "Name of task"
+  "created": 1650384918
+  "completed": 1650385453
 }
 ```
 where `created` and `completed` are [unix epoch time](https://en.wikipedia.org/wiki/Unix_time) and `completed` will be `null` if the task is has not been marked complete.
@@ -26,15 +42,15 @@ where `created` and `completed` are [unix epoch time](https://en.wikipedia.org/w
 - POST /{user}/tasks
 params:
 ```
-{ name: "Name of task" }
+{ "name": "Name of task" }
 ```
 
 returns:
 ```
 201 Created
 {
-  status: "ok"
-  id: "taskid"
+  "status": "ok"
+  "id": "taskid"
 }
 ```
 
@@ -42,13 +58,12 @@ returns:
 ```
 201 Created
 {
-  status: "ok"
-  id: "taskid"
+  "status": "ok"
+  "id": "taskid"
 }
 ```
 
 - DELETE /{user}/tasks/{id}
-on success:
 ```
 204 No Content
 ```
@@ -87,3 +102,4 @@ on success:
     }
   ]
 }
+```

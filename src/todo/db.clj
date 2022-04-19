@@ -20,7 +20,19 @@
                          user
                          token
                          token])
-    token))
+    (str token)))
+
+(defn- now
+  []
+  (.. (java.time.Instant/now) (getEpochSecond)))
+
+(defn token-valid?
+  [todo-db user token]
+  (let [{:keys [conn]} todo-db
+        row (jdbc/execute-one! conn ["select token, expires from auth_token where user = ?" user])]
+    (when row
+      (and (= token (:auth_token/token row))
+           (< (now) (:auth_token/expires row))))))
 
 (defn list-todos
   [todo-db]

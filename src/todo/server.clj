@@ -1,20 +1,22 @@
 (ns todo.server
   (:require [aleph.http :as http]
             [aleph.netty]
+            [clojure.string :as string]
             [compojure.core :refer [ANY defroutes]]
             [environ.core :refer [env]]
             [liberator.core :refer [defresource]]
-            [ring.middleware.cookies :refer [wrap-cookies]]
             [ring.middleware.json :refer [wrap-json-params]]
             [todo.db :as db]))
 
 (def PORT (parse-long (env :server-port)))
 
-;; TODO: check Authorization header instead
 (defn- user-authorized? [user]
   (fn [ctx]
-    (let [uid (get-in ctx [:request :cookies "uid" :value])]
-      (= user uid))))
+    (let [{:keys [db request]} ctx
+          bearer-token (get-in request [:headers "authorization"])]
+      (when bearer-token
+        (let [[_ token] (string/split bearer-token #" " 2)]
+          (db/token-valid? db user token))))))
 
 (defn- todo-exists? [task-id]
   (fn [ctx]
@@ -22,19 +24,20 @@
       (db/todo-exists? db task-id))))
 
 (defresource login
+  :service-available? {:db (db/create)}
   :allowed-methods [:post]
   :available-media-types ["application/json"]
   :malformed? (fn [ctx]
-                (let [{:keys [user]} (get-in ctx [:request :json-params])]
+                (let [{:strs [user]} (get-in ctx [:request :json-params])]
                   [(nil? user) {:user user}]))
   :post! (fn [ctx]
            (let [{:keys [db user]} ctx]
              {:token (db/generate-or-refresh-token db user)}))
   :respond-with-entity? true
-  :handle-ok (fn [ctx]
-               (let [{:keys [token]} ctx]
-                 {:status "ok"
-                  :token token})))
+  :handle-created (fn [ctx]
+                    (let [{:keys [token]} ctx]
+                      {:status "ok"
+                       :token token})))
 
 (defresource tasks [user]
   :service-available? {:db (db/create)}
@@ -107,7 +110,7 @@
                  (db/get-burndown db))))
 
 (defroutes app
-  (ANY "/login" login)
+  (ANY "/login" [] login)
   (ANY "/:user/tasks" [user] (tasks user))
   (ANY "/:user/task/:task-id" [user task-id] (task user task-id))
   (ANY "/:user/tasks/:task-id/toggle" [user task-id] (task-toggle user task-id))
@@ -116,7 +119,6 @@
 
 (def handler
   (-> app
-      wrap-cookies
       wrap-json-params))
 
 (defn start-server

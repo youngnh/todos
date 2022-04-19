@@ -9,7 +9,8 @@
 
   (def db (db/create))
 
-  (db/generate-or-refresh-token db "youngnh@gmail.com")
+  (def token (db/generate-or-refresh-token db "youngnh@gmail.com"))
+  (db/token-valid? db "youngnh@gmail.com" token)
 
   (db/create-schema! db)
   (db/teardown-schema! db)
