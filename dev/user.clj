@@ -5,12 +5,14 @@
 (comment
 
   (def server (server/start-server))
+  (server/stop-server server)
+
   (def db (db/create))
 
   (db/create-schema! db)
   (db/teardown-schema! db)
 
-  (db/add-todo db {:name "go to the store"})
+  (db/add-todo db {"name" "go to the store"})
 
   (db/list-todos db)
 

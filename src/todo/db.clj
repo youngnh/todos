@@ -18,7 +18,8 @@
   (let [{:keys [conn]} todo-db
         {:keys [name]} todo]
     (->> (jdbc/execute! conn ["insert into todo_item(name, created) values (?, strftime('%s', 'now'))" name] {:return-keys true})
-         (map #(get % (keyword "last_insert_rowid()"))))))
+         (map #(get % (keyword "last_insert_rowid()")))
+         (first))))
 
 (defn toggle-todo
   [todo-db task-id]

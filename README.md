@@ -8,7 +8,7 @@ To start a standalone todo api server:
 
 # API
 
-- GET /tasks
+- GET /{user}/tasks
 View list of existing todo tasks
 
 returns:
@@ -16,10 +16,13 @@ returns:
 {
   id: "taskid"
   name: "Name of task"
+  created: 1650384918
+  completed: 1650385453
 }
 ```
+where `created` and `completed` are [unix epoch time](https://en.wikipedia.org/wiki/Unix_time) and `completed` will be `null` if the task is has not been marked complete.
 
-- POST /tasks
+- POST /{user}/tasks
 params:
 ```
 { name: "Name of task" }
@@ -42,7 +45,7 @@ on failure:
 }
 ```
 
-- POST /tasks/{id}/toggle
+- POST /{user}/tasks/{id}/toggle
 on success:
 ```
 {
@@ -59,16 +62,13 @@ on failure:
 }
 ```
 
-- DELETE /tasks/{id}
+- DELETE /{user}/tasks/{id}
 on success:
 ```
-{
-  status: "ok"
-  id: "taskid"
-}
+204 No Content
 ```
 
-- GET /charts/progress
+- GET /{user}/charts/progress
 ```
 {
   "complete": 5
@@ -76,7 +76,7 @@ on success:
 }
 ```
 
-- GET /charts/burndown
+- GET /{user}/charts/burndown
 params:
 ```
 start=2022-04-02

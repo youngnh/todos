@@ -5,6 +5,7 @@
         liberator/liberator {:mvn/version "0.15.3"}
         metosin/jsonista {:mvn/version "0.3.5"}
         ring/ring {:mvn/version "1.9.5"}
+        ring/ring-json {:mvn/version "0.5.1"}
         org.clojure/clojure {:mvn/version "1.11.0"}
         org.xerial/sqlite-jdbc {:mvn/version "3.36.0"}}
 
