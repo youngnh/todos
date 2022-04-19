@@ -13,6 +13,7 @@ View list of existing todo tasks
 
 returns:
 ```
+200 OK
 {
   id: "taskid"
   name: "Name of task"
@@ -29,36 +30,20 @@ params:
 ```
 
 returns:
-on success:
 ```
+201 Created
 {
   status: "ok"
   id: "taskid"
-}
-```
-
-on failure:
-```
-{
-  status: "error"
-  error: "error message"
 }
 ```
 
 - POST /{user}/tasks/{id}/toggle
-on success:
 ```
+201 Created
 {
   status: "ok"
   id: "taskid"
-}
-```
-
-on failure:
-```
-{
-  status: "error"
-  error: "error message"
 }
 ```
 
@@ -70,6 +55,7 @@ on success:
 
 - GET /{user}/charts/progress
 ```
+200 OK
 {
   "complete": 5
   "incomplete": 2
@@ -77,21 +63,27 @@ on success:
 ```
 
 - GET /{user}/charts/burndown
-params:
 ```
-start=2022-04-02
-end=2022-04-01
-span=1d
-```
-
-```
+200 OK
 {
-  "completion": [
-    { "2022-04-01": 1 }
-    { "2022-04-02": 2 }
+  "completed": [
+    {
+      "completed": 1650376783,
+      "count": 1
+    },
+    {
+      "completed": 1650376793,
+      "count": 2
+    }
   ],
-  "creation": [
-    { "2022-04-01": 5 }
-    { "2022-04-02": 3 }
+  "created": [
+    {
+      "created": 1650335529,
+      "count": 1
+    },
+    {
+      "created": 1650375743,
+      "count": 3
+    }
   ]
 }

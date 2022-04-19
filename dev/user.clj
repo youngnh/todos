@@ -13,6 +13,7 @@
   (db/teardown-schema! db)
 
   (db/add-todo db {"name" "go to the store"})
+  (db/todo-exists? db 2)
 
   (db/list-todos db)
 

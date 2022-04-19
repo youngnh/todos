@@ -21,6 +21,13 @@
          (map #(get % (keyword "last_insert_rowid()")))
          (first))))
 
+(defn todo-exists?
+  [todo-db task-id]
+  (let [{:keys [conn]} todo-db]
+    (-> (jdbc/execute! conn ["select true from todo_item where id = ?" task-id])
+        (count)
+        (> 0))))
+
 (defn toggle-todo
   [todo-db task-id]
   (let [{:keys [conn]} todo-db]

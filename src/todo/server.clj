@@ -16,6 +16,11 @@
     (let [uid (get-in ctx [:request :cookies "uid" :value])]
       (= user uid))))
 
+(defn- todo-exists? [task-id]
+  (fn [ctx]
+    (let [{:keys [db]} ctx]
+      (db/todo-exists? db task-id))))
+
 (defresource tasks [user]
   :service-available? {:db (db/create)}
   :allowed-methods [:get :post]
@@ -40,18 +45,25 @@
 (defresource task [user task-id]
   :service-available? {:db (db/create)}
   :allowed-methods [:delete]
-  ;; TODO: exists?
+  :malformed? (fn [ctx]
+                (let [parsed-task-id (parse-long task-id)]
+                  [(nil? parsed-task-id) {:task-id parsed-task-id}]))
   :authorized? (user-authorized? user)
   :available-media-types ["application/json"]
+  :exists? (todo-exists? task-id)
   :delete! (fn [ctx]
-             (let [{:keys [db]} ctx]
+             (let [{:keys [db task-id]} ctx]
                (db/remove-todo db task-id)))
   :handle-no-content nil)
 
 (defresource task-toggle [user task-id]
   :service-available? {:db (db/create)}
   :allowed-methods [:post]
-  ;; TODO: exists?
+  :malformed? (fn [ctx]
+                (let [parsed-task-id (parse-long task-id)]
+                  [(nil? parsed-task-id) {:task-id parsed-task-id}]))
+  :exists? (todo-exists? task-id)
+  :can-post-to-missing? false
   :authorized? (user-authorized? user)
   :available-media-types ["application/json"]
   :post! (fn [ctx]
