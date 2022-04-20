@@ -102,10 +102,12 @@
   (let [{:keys [conn]} todo-db]
     (jdbc/execute! conn [(lines
                           "create table if not exists todo_item ("
-                          "  id integer primary key autoincrement,"
+                          "  id integer,"
+                          "  user text,"
                           "  name text,"
                           "  created integer,"
-                          "  completed integer"
+                          "  completed integer,"
+                          "  primary key (id, user)"
                           ");")])
     (jdbc/execute! conn [(lines
                           "create table if not exists auth_token ("
@@ -124,6 +126,9 @@
 
 (defn create
   ([]
-   (create default-spec))
+   (create default-spec nil))
   ([spec]
-   (map->TodoDB {:conn (jdbc/get-datasource spec)})))
+   (create spec nil))
+  ([spec user]
+   (map->TodoDB {:conn (jdbc/get-datasource spec)
+                 :user user})))

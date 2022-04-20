@@ -6,6 +6,10 @@ To start a standalone todo api server:
 
 > clj -M:server
 
+To run the tests:
+
+> clj -X:dev:test
+
 # API
 
 - POST /login
