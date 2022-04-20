@@ -40,7 +40,7 @@
                        :token token})))
 
 (defresource tasks [user]
-  :service-available? {:db (db/create)}
+  :service-available? {:db (db/create user)}
   :allowed-methods [:get :post]
   :malformed? (fn [ctx]
                 (let [{:keys [json-params request-method]} (get ctx :request)]
@@ -61,7 +61,7 @@
                  (db/list-todos db))))
 
 (defresource task [user task-id]
-  :service-available? {:db (db/create)}
+  :service-available? {:db (db/create user)}
   :allowed-methods [:delete]
   :malformed? (fn [ctx]
                 (let [parsed-task-id (parse-long task-id)]
@@ -75,7 +75,7 @@
   :handle-no-content nil)
 
 (defresource task-toggle [user task-id]
-  :service-available? {:db (db/create)}
+  :service-available? {:db (db/create user)}
   :allowed-methods [:post]
   :malformed? (fn [ctx]
                 (let [parsed-task-id (parse-long task-id)]
@@ -92,7 +92,7 @@
                      :id task-id}))
 
 (defresource chart-progress [user]
-  :service-available? {:db (db/create)}
+  :service-available? {:db (db/create user)}
   :allowed-methods [:get]
   :authorized? (user-authorized? user)
   :available-media-types ["application/json"]
@@ -101,7 +101,7 @@
                  (db/get-progress db))))
 
 (defresource chart-burndown [user]
-  :service-available? {:db (db/create)}
+  :service-available? {:db (db/create user)}
   :allowed-methods [:get]
   :authorized? (user-authorized? user)
   :available-media-types ["application/json"]

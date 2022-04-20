@@ -6,25 +6,28 @@
   [& strs]
   (string/join \newline strs))
 
+(defn- now
+  []
+  (.. (java.time.Instant/now) (getEpochSecond)))
+
 (def default-spec {:dbtype "sqlite", :dbname "todo.db"})
 
 (defn generate-or-refresh-token
   [todo-db user]
   (let [{:keys [conn]} todo-db
-        token (random-uuid)]
+        token (random-uuid)
+        expiration (+ (now) 3600)]
     (jdbc/execute! conn [(lines
                           "insert into auth_token(user, token, expires)"
-                          "values (?, ?, strftime('%s', 'now') + 3600)"
+                          "values (?, ?, ?)"
                           "on conflict (user)"
-                          "do update set token = ?, expires = strftime('%s', 'now') + 3600")
+                          "do update set token = ?, expires = ?")
                          user
                          token
-                         token])
+                         expiration
+                         token
+                         expiration])
     (str token)))
-
-(defn- now
-  []
-  (.. (java.time.Instant/now) (getEpochSecond)))
 
 (defn token-valid?
   [todo-db user token]
@@ -91,7 +94,8 @@
                               user])
          (reduce (fn [result row]
                    (assoc result (keyword (:status row)) (:count row)))
-                 {}))))
+                 {})
+         (merge {:complete 0, :incomplete 0}))))
 
 (defn get-burndown
   [todo-db]
@@ -144,8 +148,8 @@
 (defn create
   ([]
    (create default-spec nil))
-  ([spec]
-   (create spec nil))
+  ([user]
+   (create default-spec user))
   ([spec user]
    (map->TodoDB {:conn (jdbc/get-datasource spec)
                  :user user})))

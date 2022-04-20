@@ -15,14 +15,14 @@
 
 (defn create-schema
   [f]
-  (let [db (db/create test-spec)]
+  (let [db (db/create test-spec nil)]
     (db/teardown-schema! db)
     (db/create-schema! db))
   (f))
 
 (defn clear-data
   [f]
-  (let [db (db/create test-spec)]
+  (let [db (db/create test-spec nil)]
     (db/clear-data! db))
   (f))
 
@@ -30,7 +30,7 @@
 (use-fixtures :each clear-data)
 
 (deftest auth-token
-  (let [db (db/create test-spec)
+  (let [db (db/create test-spec nil)
         token (db/generate-or-refresh-token db user-1)]
     (is (db/token-valid? db user-1 token))
     (let [refreshed-token (db/generate-or-refresh-token db user-1)]
