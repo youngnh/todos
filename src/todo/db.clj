@@ -36,78 +36,89 @@
 
 (defn list-todos
   [todo-db]
-  (let [{:keys [conn]} todo-db]
-    (jdbc/execute! conn ["select * from todo_item"])))
+  (let [{:keys [conn user]} todo-db]
+    (jdbc/execute! conn ["select * from todo_item where user = ?" user])))
 
 (defn add-todo
   [todo-db todo]
-  (let [{:keys [conn]} todo-db
+  (let [{:keys [conn user]} todo-db
         {:keys [name]} todo]
-    (->> (jdbc/execute! conn ["insert into todo_item(name, created) values (?, strftime('%s', 'now'))" name] {:return-keys true})
-         (map #(get % (keyword "last_insert_rowid()")))
-         (first))))
+    (-> (jdbc/execute-one! conn [(lines
+                                  "insert into todo_item(user, name, created)"
+                                  "values (?, ?, ?)")
+                                 user
+                                 name
+                                 (now)]
+                          {:return-keys true})
+        (get (keyword "last_insert_rowid()")))))
 
 (defn todo-exists?
   [todo-db task-id]
-  (let [{:keys [conn]} todo-db]
-    (-> (jdbc/execute! conn ["select true from todo_item where id = ?" task-id])
+  (let [{:keys [conn user]} todo-db]
+    (-> (jdbc/execute! conn ["select true from todo_item where id = ? and user = ?" task-id user])
         (count)
         (> 0))))
 
 (defn toggle-todo
   [todo-db task-id]
-  (let [{:keys [conn]} todo-db]
+  (let [{:keys [conn user]} todo-db]
     (jdbc/execute! conn [(lines
                           "update todo_item "
                           "  set completed=("
                           "    case when completed"
                           "      then null"
-                          "      else strftime('%s', 'now') end"
+                          "      else ? end"
                           "  )"
-                          "  where id = ?")
-                         task-id])))
+                          "  where id = ? and user = ?")
+                         (now)
+                         task-id
+                         user])))
 
 (defn remove-todo
   [todo-db task-id]
-  (let [{:keys [conn]} todo-db]
-    (jdbc/execute! conn ["delete from todo_item where id = ?" task-id])))
+  (let [{:keys [conn user]} todo-db]
+    (jdbc/execute! conn ["delete from todo_item where id = ? and user = ?" task-id user])))
 
 (defn get-progress
   [todo-db]
-  (let [{:keys [conn]} todo-db]
+  (let [{:keys [conn user]} todo-db]
     (->> (jdbc/execute! conn [(lines
                                "select (case when completed is null then \"incomplete\" else \"complete\" end) as status,"
                                "  count() as count"
                                "from todo_item"
-                               "group by (completed is null)")])
+                               "where user = ?"
+                               "group by (completed is null)")
+                              user])
          (reduce (fn [result row]
                    (assoc result (keyword (:status row)) (:count row)))
                  {}))))
 
 (defn get-burndown
   [todo-db]
-  (let [{:keys [conn]} todo-db]
+  (let [{:keys [conn user]} todo-db]
     {:created (jdbc/execute! conn [(lines
                                     "select distinct created, count() over created_win as count"
                                     "  from todo_item"
-                                    "  window created_win as (order by created)")])
+                                    "  where user = ?"
+                                    "  window created_win as (order by created)")
+                                   user])
      :completed (jdbc/execute! conn [(lines
                                       "select distinct completed, count() over completed_win as count"
                                       "  from todo_item"
-                                      "  where completed is not null"
-                                      "  window completed_win as (order by completed)")])}))
+                                      "  where user = ? and completed is not null"
+                                      "  window completed_win as (order by completed)")
+                                     user])}))
 
 (defn create-schema!
   [todo-db]
   (let [{:keys [conn]} todo-db]
     (jdbc/execute! conn [(lines
                           "create table if not exists todo_item ("
-                          "  id integer,"
+                          "  id integer primary key,"
                           "  user text,"
                           "  name text,"
                           "  created integer,"
-                          "  completed integer,"
-                          "  primary key (id, user)"
+                          "  completed integer"
                           ");")])
     (jdbc/execute! conn [(lines
                           "create table if not exists auth_token ("
@@ -121,6 +132,12 @@
   (let [{:keys [conn]} todo-db]
     (jdbc/execute! conn ["drop table if exists todo_item"])
     (jdbc/execute! conn ["drop table if exists auth_token"])))
+
+(defn clear-data!
+  [todo-db]
+  (let [{:keys [conn]} todo-db]
+    (jdbc/execute! conn ["delete from todo_item"])
+    (jdbc/execute! conn ["delete from auth_token"])))
 
 (defrecord TodoDB [conn])
 
