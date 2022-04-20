@@ -10,6 +10,15 @@ To run the tests:
 
 > clj -X:dev:test
 
+# Notes to reviewers
+
+I'm just about at 3 hours spent on this, and I think I'm going to wrap things up here. A few things didn't quite get done:
+- better connection management: ensuring that a database connection gets closed properly during the course of a request's lifetime
+- more tests around the database layer: toggling task completion, progress & burndown chart behavior...
+- api-level / ring handler tests (though the [PAW](https://paw.cloud/) requests and the api outline below help a bit here)
+
+but hopefully this assignment demonstrates that I'm comfortable writing clojure and can do so in a clean, maintainable manner.
+
 # API
 
 - POST /login
